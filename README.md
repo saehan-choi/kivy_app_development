@@ -1,3 +1,9 @@
+# 현재까지 결과
+![image](https://user-images.githubusercontent.com/70372577/223656679-969f529c-4b70-4673-9914-7cf8aba6e151.png)
+
+( requests 설치시 error가 지속적으로 나와서 kivy에서 지원하는 UrlRequest 사용하였음 )
+
+
 # 사용방법
 
 (앱에서 로드하려면 ubuntu에서 buildozer 설치해야 합니다.)
