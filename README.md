@@ -1,4 +1,4 @@
-# 사용바업
+# 사용방법
 
 (앱에서 로드하려면 ubuntu에서 buildozer 설치해야 합니다.)
 main.py에 kivy앱을 개발, buildozer.spec에서 앱 이름 및 세부사항을 조절하여 
