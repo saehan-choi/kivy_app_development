@@ -46,3 +46,8 @@ adb logcat 하면 어떤 이유로 error가 도출되었는지 표출 됨.
 requests_server_example.py 서버 실행 후
 
 camera_App_local.py 실행하면 됩니다.
+
+
+# buildozer.spec의 requirements 
+
+requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna로 해야합니다. -> requests 모듈 사용시 에러가 나는데, 어떤분이 공유해주셨네요.

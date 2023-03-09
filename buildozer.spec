@@ -40,7 +40,13 @@ version = 0.1
 
 # requirements = python3, kivy였음
 
-requirements = python3, kivy, opencv-python
+# requirements = python3, kivy, opencv-python
+
+requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna,
+
+
+
+
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
