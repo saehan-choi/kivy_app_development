@@ -3,6 +3,10 @@
 
 ( requests 설치시 error가 지속적으로 나와서 kivy에서 지원하는 UrlRequest 사용하였음 -> 서버전송가능 )
 
+( UrlRequest는 자료가 너무없어서 requests로 그냥 시도..! )
+
+
+
 
 # 사용방법
 
@@ -32,3 +36,13 @@ buildozer android debug deploy run
 
 그리고 앱에서 꺼진거 로그보려면 adb 설치하고
 adb logcat 하면 어떤 이유로 error가 도출되었는지 표출 됨.
+
+
+
+
+
+# 로컬에서 신호 테스트시
+
+requests_server_example.py 서버 실행 후
+
+camera_App_local.py 실행하면 됩니다.
