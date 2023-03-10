@@ -27,7 +27,7 @@ Builder.load_string('''
         id: camera
         resolution: (1280, 720)
         allow_stretch: True
-        keep_ratio: True        
+        # keep_ratio: True        
         play: False
         canvas.before:
             PushMatrix
