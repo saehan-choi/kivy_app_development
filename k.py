@@ -24,7 +24,7 @@ class KivyCamera(Image):
         # print str(os.listdir('/sdcard2/'))
         if ret:
             # convert it to texture
-            buf1 = cv2.flip(frame, 0)
+            buf1 = cv2.flip(frame, 90)
             buf = buf1.tostring()
             image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
@@ -36,7 +36,6 @@ class CamApp(App):
     def build(self):
         # self.my_camera = KivyCamera(fps=5)
         self.my_camera = KivyCamera(fps=30)
-
 
         self.camera = BoxLayout(orientation='vertical', size_hint=(1, 0.9))
         self.camera.add_widget(self.my_camera)
@@ -68,3 +67,4 @@ class CamApp(App):
 
 if __name__ == '__main__':
     CamApp().run()
+

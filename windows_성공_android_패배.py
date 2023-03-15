@@ -37,7 +37,6 @@ class CamApp(App):
         # self.my_camera = KivyCamera(fps=5)
         self.my_camera = KivyCamera(fps=30)
 
-
         self.camera = BoxLayout(orientation='vertical', size_hint=(1, 0.9))
         self.camera.add_widget(self.my_camera)
 
@@ -68,3 +67,4 @@ class CamApp(App):
 
 if __name__ == '__main__':
     CamApp().run()
+

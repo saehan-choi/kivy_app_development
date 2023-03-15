@@ -60,7 +60,9 @@ requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, char
 
 # (list) Supported orientations
 # Valid options are: landscape, portrait, portrait-reverse or landscape-reverse
-orientation = portrait
+########################################## 여기에 세로모드로 되어있었다!!!!!!!!!!!!!!!!!!!!!!!!!!!!!이걸바꿔야합니다........#############################################################################################
+# orientation = portrait 이렇게되어있었음;;;
+orientation = all
 
 # (list) List of service to declare
 #services = NAME:ENTRYPOINT_TO_PY,NAME2:ENTRYPOINT2_TO_PY
