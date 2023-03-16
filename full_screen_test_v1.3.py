@@ -38,7 +38,8 @@ Builder.load_string('''
 class CameraClick(FloatLayout):
     def __init__(self, **kwargs):
         super(CameraClick, self).__init__(**kwargs)
-        Clock.schedule_interval(self.update, 1.0 / 30.0)  # 30 fps
+        # Clock.schedule_interval(self.update, 1.0 / 30.0)  # 30 fps
+        Clock.schedule_interval(self.update, 1.0 / 3.0)  # 3 fps
 
     def update(self, dt):
         texture = self.ids['camera'].texture
