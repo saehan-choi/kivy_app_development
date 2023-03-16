@@ -8,9 +8,6 @@ from kivy.graphics.texture import Texture
 
 import requests
 
-import numpy as np
-import cv2
-
 url = "http://27.112.246.62:8000"
 
 # 이미지 화질을 줄여서 할수있다.
@@ -55,26 +52,19 @@ class CameraClick(FloatLayout):
 
         self.ids['image'].texture = new_texture
 
-
-
-
-
-# def texture_to_image(pixels, size, mode):
-#     # 최종적으로 opencv 말고 PIL 사용도 검토할것, byte전환속도가 5배빠름..ㄷ;
-#     buf = np.frombuffer(pixels, dtype=np.uint8)
-#     buf.shape = (size[1], size[0], len(mode))
-#     img = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
-#     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-#     # here is detection code.
-#     detection_code(img)
-
-# def detection_code(img):
-#     # yolo algorithm
-#     return None
-
 class TestCamera(App):
     def build(self):
+        try:
+            # permission을 해줘야하네 ㄷㄷ; 무조건 있어야합니다..!
+            from android.permissions import request_permissions, Permission
+            request_permissions([
+                Permission.CAMERA,
+                Permission.WRITE_EXTERNAL_STORAGE,
+                Permission.READ_EXTERNAL_STORAGE
+            ])
+        except:
+            pass
+        
         return CameraClick()
 
 TestCamera().run()
