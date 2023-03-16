@@ -61,8 +61,8 @@ class CameraClick(FloatLayout):
         #     print('')
 
         # 서버에서 전달받는 response로 작업을 진행!
-        # self.ids['image'].texture = new_texture
-        self.ids['image'].texture = texture
+        self.ids['image'].texture = new_texture
+        # self.ids['image'].texture = texture
 
 def texture_to_image(texture):
     # 서버에서쓰기; ㅋ

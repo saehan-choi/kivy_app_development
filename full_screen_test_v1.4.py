@@ -14,12 +14,12 @@ import cv2
 url = "http://27.112.246.62:8000"
 
 # 이미지 화질을 줄여서 할수있다.
-
 Builder.load_string('''
 <CameraClick>:
     Camera:
         id: camera
-        resolution: (720, 480)
+        # resolution: (720, 480)
+        resolution: (640, 480)
         play: True
         opacity: 0
     Image:
@@ -28,8 +28,8 @@ Builder.load_string('''
         keep_ratio: True
         # 투명도 조절
         opacity: 1
-
 ''')
+
 
 class CameraClick(FloatLayout):
     def __init__(self, **kwargs):
@@ -50,37 +50,28 @@ class CameraClick(FloatLayout):
                                         },
                                 timeout=10)
 
-        # # 텍스처 이미지 변경
-        # # 이렇게 변환시키고 opencv에서 사용하더라도, 이미지를 사용해야겠네
-        # new_texture = Texture.create(size=texture.size, colorfmt=texture.colorfmt)
-        # # -> 이게 오리지널이였음 
-        # # -> 밑에는 이미지 표시되는거 바꾸려고 시도함.
-        # # new_texture = Texture.create(size=(texture.size[1],texture.size[0]), colorfmt=texture.colorfmt)
-        # new_texture.blit_buffer(texture.pixels, bufferfmt='ubyte', colorfmt=texture.colorfmt)
-
-        new_texture = Texture.create(size=texture.size, colorfmt=texture.colorfmt)
+        new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
         new_texture.blit_buffer(response.content, bufferfmt='ubyte', colorfmt=texture.colorfmt)
 
-        # self.ids['image'].texture = new_texture
-        self.ids['image'].texture = texture
-        
-def texture_to_image(pixels, size, mode):
-    # 최종적으로 opencv 말고 PIL 사용도 검토할것, byte전환속도가 5배빠름..ㄷ;
-    buf = np.frombuffer(pixels, dtype=np.uint8)
-    buf.shape = (size[1], size[0], len(mode))
-    img = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
-    img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    
-    # here is detection code.
-    detection_code(img)
-    
-    
-    
-    cv2.imwrite('./imageFolder/kaka.jpg', buf)
+        self.ids['image'].texture = new_texture
 
-def detection_code(img):
-    # yolo algorithm
-    return None
+
+
+
+
+# def texture_to_image(pixels, size, mode):
+#     # 최종적으로 opencv 말고 PIL 사용도 검토할것, byte전환속도가 5배빠름..ㄷ;
+#     buf = np.frombuffer(pixels, dtype=np.uint8)
+#     buf.shape = (size[1], size[0], len(mode))
+#     img = cv2.cvtColor(buf, cv2.COLOR_RGB2BGR)
+#     img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+#     # here is detection code.
+#     detection_code(img)
+
+# def detection_code(img):
+#     # yolo algorithm
+#     return None
 
 class TestCamera(App):
     def build(self):
