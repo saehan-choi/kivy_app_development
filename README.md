@@ -1,5 +1,5 @@
 # 현재까지 결과
-![image](https://user-images.githubusercontent.com/70372577/223656679-969f529c-4b70-4673-9914-7cf8aba6e151.png)
+![image](https://user-images.githubusercontent.com/70372577/225788612-3c0cb922-f632-42ff-9d78-d4262af7d3bb.png)
 
 ( requests 설치시 error가 지속적으로 나와서 kivy에서 지원하는 UrlRequest 사용하였음 -> 서버전송가능 )
 
