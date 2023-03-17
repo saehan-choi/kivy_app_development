@@ -39,12 +39,16 @@ version = 0.1
 # comma separated e.g. requirements = sqlite3,kivy ###################################################################내가 수정 초기설정은 requirements = python3,kivy 이였음###################################################################
 
 # requirements = python3, kivy였음
-
 # requirements = python3, kivy, opencv-python
+# requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna
+# 이거 안됨. ImportError: OpenCV loader: missing configuration file: ['config.py']. Check OpenCV installation. 에러뜸   requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna, numpy, opencv-python
+#requirements = python3, kivy, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna, opencv-python
+# 이것도 clock 에러남.
 
-requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna,
+# 이게 Final이고, 이렇게 했을때 requests 사용 됨
+requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna, Cython
 
-
+# requirements = python3, kivy, requests, urllib3, chardet, certifi, idna
 
 
 
@@ -61,8 +65,8 @@ requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, char
 # (list) Supported orientations
 # Valid options are: landscape, portrait, portrait-reverse or landscape-reverse
 ########################################## 여기에 세로모드로 되어있었다!!!!!!!!!!!!!!!!!!!!!!!!!!!!!이걸바꿔야합니다........#############################################################################################
-# orientation = portrait 이렇게되어있었음;;;
-orientation = all
+# orientation = portrait 이렇게되어있었음;;; -> 이거하니깐 세로로바뀌는데..
+orientation = portrait
 
 # (list) List of service to declare
 #services = NAME:ENTRYPOINT_TO_PY,NAME2:ENTRYPOINT2_TO_PY
@@ -109,11 +113,13 @@ fullscreen = 0
 
 
 # #######################################################################################################이게 기본설정#android.permissions = android.permission.INTERNET, (name=android.permission.WRITE_EXTERNAL_STORAGE;maxSdkVersion=18)
+# android.permissions = android.permission.INTERNET, android.permission.CAMERA, android.permission.WRITE_EXTERNAL_STORAGE, android.permission.READ_EXTERNAL_STORAGE
 
-android.permissions = android.permission.INTERNET, android.permission.CAMERA, android.permission.WRITE_EXTERNAL_STORAGE, android.permission.READ_EXTERNAL_STORAGE
+android.permissions = android.permission.CAMERA, android.permission.INTERNET
 
 # (list) features (adds uses-feature -tags to manifest)
 #android.features = android.hardware.usb.host, android.hardware.camera
+
 
 # (int) Target Android API, should be as high as possible.
 #android.api = 31
@@ -218,6 +224,7 @@ android.permissions = android.permission.INTERNET, android.permission.CAMERA, an
 
 # (list) Gradle dependencies to add
 #android.gradle_dependencies =
+#android.gradle_dependencies = 3.5.2
 
 # (bool) Enable AndroidX support. Enable when 'android.gradle_dependencies'
 # contains an 'androidx' package, or any package from Kotlin source.

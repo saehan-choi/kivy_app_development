@@ -1,5 +1,5 @@
 # 현재까지 결과
-![image](https://user-images.githubusercontent.com/70372577/223656679-969f529c-4b70-4673-9914-7cf8aba6e151.png)
+![image](https://user-images.githubusercontent.com/70372577/225788612-3c0cb922-f632-42ff-9d78-d4262af7d3bb.png)
 
 ( requests 설치시 error가 지속적으로 나와서 kivy에서 지원하는 UrlRequest 사용하였음 -> 서버전송가능 )
 
@@ -38,16 +38,8 @@ buildozer android debug deploy run
 adb logcat 하면 어떤 이유로 error가 도출되었는지 표출 됨.
 
 
-
-
-
-# 로컬에서 신호 테스트시
-
-requests_server_example.py 서버 실행 후
-
-camera_App_local.py 실행하면 됩니다.
-
-
 # buildozer.spec의 requirements 
+
+requests 사용시 해당버전 사용할것.
 
 requirements = python3, kivy==2.0.0rc4, kivymd==0.102.1, requests, urllib3, chardet, certifi, idna로 해야합니다. -> requests 모듈 사용시 에러가 나는데, 어떤분이 공유해주셨네요.
