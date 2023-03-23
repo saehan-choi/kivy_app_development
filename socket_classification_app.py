@@ -22,8 +22,9 @@ import time
 # url = "http://27.112.246.62:8000"
 # url = "https://192.168.7.102:8000"
 
-IP, PORT = '192.168.7.102', 8000
+# IP, PORT = '192.168.7.102', 8000
 
+IP, PORT = '27.112.246.62', 8000
 
 # resolution: (640, 480) -> 디텍션 가능함.
 # resolution: (320, 240) -> 디텍션 가능함.
@@ -67,7 +68,6 @@ class classificationApp(FloatLayout):
 
         btn_capture.bind(on_press=self.capture)
         self.add_widget(btn_capture)
-
         self.capture_timeout = 5
 
     def capture(self, instance):
@@ -75,16 +75,11 @@ class classificationApp(FloatLayout):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((IP, PORT))
 
-        self.sock.sendall(self.rotated_numpy.tobytes())
-        print('여기도됨ㅋ;')
-        
-        
-        # msg = self.sock.recv(4096).decode('utf-8')
-        print('여긴넘으면안되지 ㅋ;')
+        # 이것도 일단됨
+        # self.sock.sendall(self.rotated_numpy.tobytes())
+        self.sock.sendall(self.rotated_bytes)
+
         self.ids['response_label'].text = 'jaja'
-
-
-
 
         Clock.unschedule(self.update)
         # dt가 있는 이유는 schedule_once에서 dt인자를 받아야하기 때문입니다.
