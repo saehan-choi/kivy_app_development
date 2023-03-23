@@ -4,22 +4,23 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.camera import Camera
 from kivy.uix.image import Image
 from kivy.graphics.texture import Texture
-from kivy.clock import Clock
+from kivy.uix.button import Button
 
 import requests
 
 import numpy as np
 
-
 import io
+
+from kivy.clock import Clock
 
 url = "http://27.112.246.62:8000"
 
 # resolution: (640, 480) -> 디텍션 가능함.
-# resolution=(320, 240) -> 디텍션 가능함.
+# resolution: (320, 240) -> 디텍션 가능함.
 
 Builder.load_string('''
-<yoloDetection>:
+<classificationApp>:
     Camera:
         id: camera
         resolution: (640, 480)
@@ -33,29 +34,45 @@ Builder.load_string('''
         opacity: 1
 ''')
 
-class yoloDetection(FloatLayout):
+class classificationApp(FloatLayout):
     def __init__(self, **kwargs):
-        super(yoloDetection, self).__init__(**kwargs)
+        super(classificationApp, self).__init__(**kwargs)
         Clock.schedule_interval(self.update, 1.0 / 5.0)
+
+        # 버튼 추가
+        btn_capture = Button(text='Capture', size_hint=(None, None), size=(150, 100), pos_hint={'center_x': 0.5, 'y': 0})
+        btn_capture.texture_size = btn_capture.size
+        btn_capture.padding = [20, 20]
+
+        btn_capture.bind(on_press=self.capture)
+        self.add_widget(btn_capture)
+
+    def capture(self, instance):
+        # 현재 화면에 보이는 프레임을 캡처하고 처리하는 함수 호출
         
+        self.ids['image'].texture = self.new_texture
+
+        Clock.unschedule(self.update)
+        Clock.schedule_once(lambda dt: Clock.schedule_interval(self.update, 1.0 / 5.0), 5)
+
+        # TODO: 캡처한 프레임을 처리하는 함수 호출
 
     def update(self, dt):
-
         texture = self.ids['camera'].texture
-        # !!!!!!일케하면 회전되어서 보여진다!!!!!!!
-        
+
+        # 나중에 이미지 사이즈 줄일때도 np저거 이용해서 줄이는게 낫겠다..! opencv 에러나니깐..!
         pixels = np.frombuffer(texture.pixels, dtype=np.uint8)
         pixels = pixels.reshape(texture.size[1], texture.size[0], -1)
         rotated_pixels = np.rot90(pixels)
         rotated_bytes = bytearray(rotated_pixels)
         rotated_bytes = io.BytesIO(rotated_bytes)
 
-
-        # 이건 rgb로 잡아서 bgr로 넘겨줄지 rgba 계속사용할지 고민
         new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
         new_texture.blit_buffer(rotated_bytes.getvalue(), bufferfmt='ubyte', colorfmt=texture.colorfmt)
 
-        self.ids['image'].texture = new_texture
+        # 이거는 capture에서 사용하려고 선언함
+        self.new_texture = new_texture
+        self.ids['image'].texture = self.new_texture
 
 class TestCamera(App):
     def build(self):
@@ -73,7 +90,7 @@ class TestCamera(App):
             pass
                 
                 
-        return yoloDetection()
+        return classificationApp()
 
 TestCamera().run()
 
