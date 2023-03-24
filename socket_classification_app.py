@@ -16,7 +16,6 @@ import io
 
 from kivy.clock import Clock
 
-import time
 
 # 이건 나중에 server 할때 바꾸자
 # url = "http://27.112.246.62:8000"
@@ -53,12 +52,13 @@ Builder.load_string('''
         font_size: '20sp'
 ''')
 
+# 왜 실시간으로 되다가 버튼한번누르면 (뚞뚞끊낌) 안되는거지?
+
 class classificationApp(FloatLayout):
     def __init__(self, **kwargs):
         super(classificationApp, self).__init__(**kwargs)
 
-
-        Clock.schedule_interval(self.update, 1.0 / 5.0)
+        Clock.schedule_interval(self.update, 1.0 / 30.0)
         # 나중에 1.0/30.0으로 바꾸고 해상도도변경해야함.
 
         # 버튼 추가
@@ -78,14 +78,13 @@ class classificationApp(FloatLayout):
         # 이것도 일단됨
         # self.sock.sendall(self.rotated_numpy.tobytes())
         self.sock.sendall(self.rotated_bytes)
-
+        
         self.ids['response_label'].text = 'jaja'
 
         Clock.unschedule(self.update)
         # dt가 있는 이유는 schedule_once에서 dt인자를 받아야하기 때문입니다.
-        Clock.schedule_once(lambda dt: Clock.schedule_interval(self.update, 1.0 / 5.0), self.capture_timeout)
-        Clock.schedule_once(self.clear_label_text, self.capture_timeout)
-
+        Clock.schedule_once(lambda dt: Clock.schedule_interval(self.update, 1.0 / 30.0), self.capture_timeout)
+        # Clock.schedule_once(self.clear_label_text, self.capture_timeout)
 
     def update(self, dt):
         texture = self.ids['camera'].texture
@@ -99,7 +98,7 @@ class classificationApp(FloatLayout):
 
         self.ids['image'].texture = self.new_texture
         self.ids['response_label'].text = ''
-        
+
     def numpy_to_bytes(self, array):
         bytes_array = bytearray(array)
         bytes = io.BytesIO(bytes_array)
@@ -118,8 +117,6 @@ class classificationApp(FloatLayout):
         # bytes만 반환
         return rotated_pixels
 
-    def clear_label_text(self, dt):
-        self.ids['response_label'].text = ''
 
 class TestCamera(App):
     def build(self):
@@ -140,4 +137,3 @@ class TestCamera(App):
         return classificationApp()
 
 TestCamera().run()
-
