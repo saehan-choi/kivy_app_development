@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
 from PIL import Image
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as T
-
 
 print(gym.__version__)
 # if gym.__version__ < '0.26':
@@ -81,14 +81,17 @@ class DQN(nn.Module):
         x = F.relu(self.bn3(self.conv3(x)))
         return self.head(x.view(x.size(0), -1))
 
-
 resize = T.Compose([T.ToPILImage(),
                     T.Resize(40, interpolation=Image.BICUBIC),
                     T.ToTensor()])
 
+# 카트는 300에서 시작합니다.
 def get_cart_location(screen_width):
     world_width = env.x_threshold * 2
+    # 카트의 중심에서 최대 얼마나 멀어질 수 있는지 나타냄
+
     scale = screen_width / world_width
+
     return int(env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
 
 def get_screen():
@@ -101,15 +104,37 @@ def get_screen():
     screen = screen[:, int(screen_height*0.4):int(screen_height * 0.8)]
     view_width = int(screen_width * 0.6)
     cart_location = get_cart_location(screen_width)
+    # print(cart_location)
+    
+
+    # 안보일때
     if cart_location < view_width // 2:
         slice_range = slice(view_width)
+        
+    #  None은 선택된 요소들의 끝을 나타냄
     elif cart_location > (screen_width - view_width // 2):
         slice_range = slice(-view_width, None)
     else:
         slice_range = slice(cart_location - view_width // 2,
                             cart_location + view_width // 2)
+
+
+# arr = [1, 2, 3, 4, 5]
+# # slice(3)을 사용하여 인덱스 3부터 끝까지의 요소를 선택
+# new_arr = arr[slice(3)]
+# print(new_arr)  # [4, 5]
+
+
+# arr = [1, 2, 3, 4, 5]
+# # slice(-3)을 사용하여 마지막 요소 3개를 선택
+# new_arr = arr[slice(-3, None)]
+# print(new_arr)  # [3, 4, 5]
+
+
+
     # 카트를 중심으로 정사각형 이미지가 되도록 가장자리를 제거하십시오.
     screen = screen[:, :, slice_range]
+    
     # float 으로 변환하고,  rescale 하고, torch tensor 로 변환하십시오.
     # (이것은 복사를 필요로하지 않습니다)
     screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
@@ -239,7 +264,7 @@ def optimize_model():
     optimizer.step()        
 
 num_episodes = 50
-for i_episode in range(num_episodes):
+for i_episode in tqdm(range(num_episodes)):
     # 환경과 상태 초기화
     env.reset()
     last_screen = get_screen()
