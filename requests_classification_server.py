@@ -16,7 +16,7 @@ def post():
     file = request.files['camera.pixels']
     byte_data = file.read()
     # 여기서 0.1s 소요됨.. 이걸 해결해야한다. -> 직접 byte파일을 보내고, 읽어올수있는 방법없는지 찾기
-    
+
     img = bytes_to_img(byte_data)
     
     # classification으로 시작할때 어떤사이즈가 최적의 사이즈인지 알아내고, app에서 전송할때 그사이즈로 resize해서 전송할것.

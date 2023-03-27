@@ -128,17 +128,14 @@ def get_screen():
     # new_arr = arr[slice(3)]
     # print(new_arr)  # [4, 5]
 
-
     # arr = [1, 2, 3, 4, 5]
     # # slice(-3)을 사용하여 마지막 요소 3개를 선택
     # new_arr = arr[slice(-3, None)]
     # print(new_arr)  # [3, 4, 5]
 
-
-
     # 카트를 중심으로 정사각형 이미지가 되도록 가장자리를 제거하십시오.
     screen = screen[:, :, slice_range]
-    
+
     # float 으로 변환하고,  rescale 하고, torch tensor 로 변환하십시오.
     # (이것은 복사를 필요로하지 않습니다)
     screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
@@ -148,22 +145,23 @@ def get_screen():
     # 크기를 수정하고 배치 차원(BCHW)을 추가하십시오.
     return resize(screen).unsqueeze(0)
 
-
 # env.reset()
 # plt.figure()
 # plt.imshow(get_screen().cpu().squeeze(0).permute(1, 2, 0).numpy(),
 #            interpolation='none')
 # plt.title('Example extracted screen')
-
 # plt.savefig('savefig.png')
 
 
-BATCH_SIZE = 128
+# BATCH_SIZE = 128
+BATCH_SIZE = 256
 GAMMA = 0.999
 EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 200
 TARGET_UPDATE = 10
+
+# 한수원 수중영상기반, 수중음향기반, 계획, 투입인력 
 
 # AI gym에서 반환된 형태를 기반으로 계층을 초기화 하도록 화면의 크기를
 # 가져옵니다. 이 시점에 일반적으로 3x40x90 에 가깝습니다.
@@ -185,7 +183,7 @@ memory = ReplayMemory(10000)
 
 steps_done = 0
 
-
+# epsilon greedy policy
 def select_action(state):
     global steps_done
     sample = random.random()
@@ -231,15 +229,17 @@ def optimize_model():
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). 이것은 batch-array의 Transitions을 Transition의 batch-arrays로
     # 전환합니다.
-    
+
     batch = Transition(*zip(*transitions))
 
     # 최종이 아닌 상태의 마스크를 계산하고 배치 요소를 연결합니다
     # (최종 상태는 시뮬레이션이 종료 된 이후의 상태)
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                           batch.next_state)), device=device, dtype=torch.bool)
+
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
+
     state_batch = torch.cat(batch.state)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
@@ -254,13 +254,23 @@ def optimize_model():
     # 이것은 마스크를 기반으로 병합되어 기대 상태 값을 갖거나 상태가 최종인 경우 0을 갖습니다.
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
     next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
+    
+    # target_net(non_final_next_states).max(1)[0] -> action value
+    # values=tensor([-0.0114, -0.0129, -0.0129, -0.0136, -0.0136, -0.0133, -0.0105, -0.0117,
+    #         -0.0134, -0.0115, -0.0131, -0.0140, -0.0125, -0.0129, -0.0134, -0.0115], device='cuda:0', grad_fn=<MaxBackward0>)
+    
+    # target_net(non_final_next_states).max(1)[1] -> action index
+    #        device='cuda:0', grad_fn=<MaxBackward0>),
+    # indices=tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], device='cuda:0')
+    
     # 기대 Q 값 계산
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
     # Huber 손실 계산
     criterion = nn.SmoothL1Loss()
+    # criterion(pred, target) 입니다.
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
     # 모델 최적화
     optimizer.zero_grad()
     loss.backward()
@@ -274,12 +284,9 @@ for i_episode in tqdm(range(num_episodes)):
     env.reset()
     last_screen = get_screen()
     current_screen = get_screen()
-    
-    print(torch.all(last_screen.eq(current_screen)).item())
-    print(torch.all(current_screen.eq(current_screen)).item())
-    print('\n\n')
-    
+
     state = current_screen - last_screen
+
     for t in count():
         # 행동 선택과 수행
         action = select_action(state)

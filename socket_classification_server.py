@@ -37,7 +37,6 @@ def recvall(sock):
 
     return data
 
-
 def bytes_to_image(bytes):
     pixels = np.frombuffer(bytes, dtype=np.uint8)
     # print(pixels.shape)
@@ -46,6 +45,8 @@ def bytes_to_image(bytes):
     img = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
     img = cv2.rotate(img, cv2.ROTATE_180)
     img = cv2.flip(img, 1)
+    
+    cv2.imwrite('kaka.jpg', img)
 
     return img
 
@@ -72,6 +73,7 @@ def img_to_tensor(img):
     tensor_img = torch.from_numpy(img / 255.0).float()
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     normalized_img = normalize(tensor_img).unsqueeze(0)
+    normalized_img = normalized_img.to(device)
     # ed2 = time.time()
 
     return normalized_img
@@ -90,7 +92,7 @@ def tensor_to_results(model, img, classes):
             for j in range(max_indices.shape[1]):
                 prob = softmax_results[i][j]*100
                 print(f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%")
-                classification_results+=f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
+                classification_results+=f"{classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
 
             print('\n\n')
 
@@ -100,7 +102,9 @@ def tensor_to_results(model, img, classes):
 
 if __name__ == "__main__":
     classes = imagenet_classes_arr()
+    device = torch.device("cuda:2")
     model = timm.create_model('efficientnet_b0', pretrained=True)
+    model.to(device)
 
     while True:
 
