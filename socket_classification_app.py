@@ -5,28 +5,22 @@ from kivy.uix.camera import Camera
 from kivy.uix.image import Image
 from kivy.graphics.texture import Texture
 from kivy.uix.button import Button
-
-# import requests
-
-import socket
-
-import numpy as np
-
-import io
-
 from kivy.clock import Clock
 
+import socket
+import numpy as np
+import io
 
-# 이건 나중에 server 할때 바꾸자
-# url = "http://27.112.246.62:8000"
-# url = "https://192.168.7.102:8000"
-
-# IP, PORT = '192.168.7.102', 8000
+# IP, PORT = '27.112.246.62', 8000
 
 IP, PORT = '27.112.246.62', 8000
 
 # resolution: (640, 480) -> 디텍션 가능함.
 # resolution: (320, 240) -> 디텍션 가능함.
+
+# 1280x720
+# 1920x1080
+# -> 이부분은 테스트 아직 안해보았음
 
 Builder.load_string('''
 <classificationApp>:
@@ -44,12 +38,13 @@ Builder.load_string('''
     Label:
         id: response_label
         size_hint: None, None
-        size: 200, 60
-        height: 60
+        # size:w, h 입니다.
+        size: 300, 180
+        height: 120
         valign: 'bottom'
         halign: 'left'
         pos_hint: {'x': 0, 'y': 0}
-        font_size: '20sp'
+        font_size: '10sp'
 ''')
 
 # 왜 실시간으로 되다가 버튼한번누르면 (뚞뚞끊낌) 안되는거지?
@@ -61,8 +56,10 @@ class classificationApp(FloatLayout):
         Clock.schedule_interval(self.update, 1.0 / 30.0)
         # 나중에 1.0/30.0으로 바꾸고 해상도도변경해야함.
 
-        # 버튼 추가
-        btn_capture = Button(text='Classficiation', size_hint=(None, None), size=(150, 100), pos_hint={'center_x': 0.5, 'y': 0})
+        # 버튼 추가 size=(200, 150) 로 되어있는데, 지금 버튼 크기 width 더 늘려야해서 400, 150 으로 해볼것. height는 딱맞음.
+        # 이거 흠... 길면 짤리는데 어케하지 .......!
+        btn_capture = Button(text='Classficiation', size_hint=(None, None), size=(300, 150), pos_hint={'center_x': 0.5, 'y': 0})
+        # 이거 size 조절해야함.......!  
         btn_capture.texture_size = btn_capture.size
         btn_capture.padding = [20, 20]
 
@@ -79,7 +76,9 @@ class classificationApp(FloatLayout):
         # self.sock.sendall(self.rotated_numpy.tobytes())
         self.sock.sendall(self.rotated_bytes)
         
-        self.ids['response_label'].text = 'jaja'
+        texts = self.sock.recv(1024).decode('utf-8')
+        
+        self.ids['response_label'].text = texts
 
         Clock.unschedule(self.update)
         # dt가 있는 이유는 schedule_once에서 dt인자를 받아야하기 때문입니다.
@@ -92,7 +91,7 @@ class classificationApp(FloatLayout):
         # rotate를 위해 numpy로 변환 및 회전후 bytes로 변경
         self.rotated_numpy = self.bytes_to_numpy(texture)
         self.rotated_bytes = self.numpy_to_bytes(self.rotated_numpy)
-        
+
         self.new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
         self.new_texture.blit_buffer(self.rotated_bytes, bufferfmt='ubyte', colorfmt=texture.colorfmt)
 
@@ -132,8 +131,9 @@ class TestCamera(App):
             
         except:
             pass
-                
+            
                 
         return classificationApp()
 
 TestCamera().run()
+

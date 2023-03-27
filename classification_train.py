@@ -94,13 +94,13 @@ class Model(nn.Module):
         output = self.model(x)
         return output
 
-
 class ImageDataset(Dataset):
     def __init__(self, file_list, transform):
         self.transform = transform
         self.file_list = []
         self.labels_list = []
         self.labels = deque([])
+        # !!!!!!! 이거 자동으로 라벨까지 정하는걸로 바꾸기 !!!!!!! classes.txt를 만들어야겠네 ㅋ;
 
         for path in os.listdir(file_list):
             full_path1 = os.path.join(file_list, path)

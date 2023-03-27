@@ -62,7 +62,7 @@ def imagenet_classes_arr():
     return class_names
 
 def img_to_tensor(img):
-    
+
     img = cv2.resize(img, (256,256))
     # h, w, c -> c, h, w 로 변경! imagenet에서 학습될 때 이런 색상으로 학습된다네용
     img = img.transpose(2, 0, 1)
@@ -78,40 +78,44 @@ def img_to_tensor(img):
 
 def tensor_to_results(model, img, classes):
     # inference
+    classification_results = ""
     model.eval()
     with torch.no_grad():
         results = model(img)
         max_values, max_indices = torch.topk(results, k=5, dim=1)
         softmax_results = F.softmax(max_values, dim=1)
-        
+
         # max_indices -> tensor([[508, 878, 398, 810, 681]])
         for i in range(max_indices.shape[0]):
             for j in range(max_indices.shape[1]):
                 prob = softmax_results[i][j]*100
                 print(f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%")
-            print('\n\n\n')
-    
+                classification_results+=f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
 
+            print('\n\n')
+
+        # socket으로 전송하기 위해서는 bytes로 결과를 보내야하기 때문에 이렇게 전송
+        serialized_results = classification_results.encode('utf-8')
+        return serialized_results
 
 if __name__ == "__main__":
     classes = imagenet_classes_arr()
     model = timm.create_model('efficientnet_b0', pretrained=True)
 
     while True:
-            
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind((HOST, PORT))
             server_socket.listen()
             client_socket, addr = server_socket.accept()
-            
             bytes = recvall(client_socket)
             img = bytes_to_image(bytes)
             tensor = img_to_tensor(img)
+            results = tensor_to_results(model, tensor, classes)
             
-            tensor_to_results(model, tensor, classes)
-
+            client_socket.sendall(results)
 
         client_socket.close()
         server_socket.close()
+

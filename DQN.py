@@ -52,6 +52,7 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
+
 class DQN(nn.Module):
 
     def __init__(self, h, w, outputs):
@@ -88,11 +89,14 @@ resize = T.Compose([T.ToPILImage(),
 # 카트는 300에서 시작합니다.
 def get_cart_location(screen_width):
     world_width = env.x_threshold * 2
-    # 카트의 중심에서 최대 얼마나 멀어질 수 있는지 나타냄
-
+    # 카트의 중심에서 최대 얼마나 멀어질 수 있는지 나타냄 (움직일수있는 최대거리)
     scale = screen_width / world_width
 
+    # print(env.state[0] * scale + screen_width / 2.0)
+    # print('\n')
+    # 카트의 위치를 return
     return int(env.state[0] * scale + screen_width / 2.0)  # MIDDLE OF CART
+
 
 def get_screen():
     # gym이 요청한 화면은 400x600x3 이지만, 가끔 800x1200x3 처럼 큰 경우가 있습니다.
@@ -105,7 +109,7 @@ def get_screen():
     view_width = int(screen_width * 0.6)
     cart_location = get_cart_location(screen_width)
     # print(cart_location)
-    
+
 
     # 안보일때
     if cart_location < view_width // 2:
@@ -119,16 +123,16 @@ def get_screen():
                             cart_location + view_width // 2)
 
 
-# arr = [1, 2, 3, 4, 5]
-# # slice(3)을 사용하여 인덱스 3부터 끝까지의 요소를 선택
-# new_arr = arr[slice(3)]
-# print(new_arr)  # [4, 5]
+    # arr = [1, 2, 3, 4, 5]
+    # # slice(3)을 사용하여 인덱스 3부터 끝까지의 요소를 선택
+    # new_arr = arr[slice(3)]
+    # print(new_arr)  # [4, 5]
 
 
-# arr = [1, 2, 3, 4, 5]
-# # slice(-3)을 사용하여 마지막 요소 3개를 선택
-# new_arr = arr[slice(-3, None)]
-# print(new_arr)  # [3, 4, 5]
+    # arr = [1, 2, 3, 4, 5]
+    # # slice(-3)을 사용하여 마지막 요소 3개를 선택
+    # new_arr = arr[slice(-3, None)]
+    # print(new_arr)  # [3, 4, 5]
 
 
 
@@ -138,6 +142,8 @@ def get_screen():
     # float 으로 변환하고,  rescale 하고, torch tensor 로 변환하십시오.
     # (이것은 복사를 필요로하지 않습니다)
     screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
+    # np.ascontiguousarray() 함수는 입력된 배열을 연속적인 메모리 공간에 저장되도록 변환하며, 이를 통해 배열의 연산 속도를 향상시킬 수 있습니다.
+
     screen = torch.from_numpy(screen)
     # 크기를 수정하고 배치 차원(BCHW)을 추가하십시오.
     return resize(screen).unsqueeze(0)
@@ -168,6 +174,7 @@ _, _, screen_height, screen_width = init_screen.shape
 # gym 행동 공간에서 행동의 숫자를 얻습니다.
 n_actions = env.action_space.n
 
+
 policy_net = DQN(screen_height, screen_width, n_actions).to(device)
 target_net = DQN(screen_height, screen_width, n_actions).to(device)
 target_net.load_state_dict(policy_net.state_dict())
@@ -175,7 +182,6 @@ target_net.eval()
 
 optimizer = optim.RMSprop(policy_net.parameters())
 memory = ReplayMemory(10000)
-
 
 steps_done = 0
 
@@ -217,8 +223,7 @@ def plot_durations():
     if is_ipython:
         display.clear_output(wait=True)
         display.display(plt.gcf())
-        
-        
+
 def optimize_model():
     if len(memory) < BATCH_SIZE:
         return
@@ -269,6 +274,11 @@ for i_episode in tqdm(range(num_episodes)):
     env.reset()
     last_screen = get_screen()
     current_screen = get_screen()
+    
+    print(torch.all(last_screen.eq(current_screen)).item())
+    print(torch.all(current_screen.eq(current_screen)).item())
+    print('\n\n')
+    
     state = current_screen - last_screen
     for t in count():
         # 행동 선택과 수행
