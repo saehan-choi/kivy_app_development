@@ -18,6 +18,7 @@ is_ipython = 'inline' in matplotlib.get_backend()
 if is_ipython:
     from IPython import display
 
+# plt를 지속적으로 업데이트핤 수 있는 함수임.
 plt.ion()
 
 # if gpu is to be used
@@ -83,6 +84,7 @@ n_actions = env.action_space.n
 state, info = env.reset()
 n_observations = len(state)
 
+
 policy_net = DQN(n_observations, n_actions).to(device)
 target_net = DQN(n_observations, n_actions).to(device)
 target_net.load_state_dict(policy_net.state_dict())
@@ -90,10 +92,10 @@ target_net.load_state_dict(policy_net.state_dict())
 optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
 memory = ReplayMemory(10000)
 
-
 steps_done = 0
 
 
+# epsilon greedy 
 def select_action(state):
     global steps_done
     sample = random.random()
@@ -106,6 +108,16 @@ def select_action(state):
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
             return policy_net(state).max(1)[1].view(1, 1)
+
+    # target_net(non_final_next_states).max(1)[0] -> action value
+    # values=tensor([-0.0114, -0.0129, -0.0129, -0.0136, -0.0136, -0.0133, -0.0105, -0.0117,
+    #         -0.0134, -0.0115, -0.0131, -0.0140, -0.0125, -0.0129, -0.0134, -0.0115], device='cuda:0', grad_fn=<MaxBackward0>)
+    
+    # target_net(non_final_next_states).max(1)[1] -> action index
+    #        device='cuda:0', grad_fn=<MaxBackward0>),
+    # indices=tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], device='cuda:0')
+
     else:
         return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
 
@@ -176,6 +188,7 @@ def optimize_model():
 
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
+    # criterion(pred, target) 입니다.
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 
     # Optimize the model
@@ -184,8 +197,6 @@ def optimize_model():
     # In-place gradient clipping
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
-    
-
 
 if torch.cuda.is_available():
     num_episodes = 600
@@ -205,6 +216,7 @@ for i_episode in range(num_episodes):
         if terminated:
             next_state = None
         else:
+            # print(observation) -> 현재 state
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
         # Store the transition in memory
