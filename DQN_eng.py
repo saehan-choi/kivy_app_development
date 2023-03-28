@@ -111,6 +111,7 @@ def select_action(state):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
+            # action index가 나옴
             return policy_net(state).max(1)[1].view(1, 1)
 
     # target_net(non_final_next_states).max(1)[0] -> action value
@@ -239,8 +240,7 @@ for i_episode in range(num_episodes):
         # reward - action후 보상
         # terminated - 에피소드 종료여부
         # truncated - 최대시간 단계에 도달해서 강제로 종료여부
-        if reward != 1.0:
-            print('what?')
+
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
@@ -267,9 +267,12 @@ for i_episode in range(num_episodes):
         for key in policy_net_state_dict:
             target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
         target_net.load_state_dict(target_net_state_dict)
-
         if done:
             episode_durations.append(t + 1)
+            
+            if episode_durations[-1] > 400:
+                torch.save(policy_net_state_dict, f'./cartpole_weights/episode_durations_{episode_durations[-1]}.pt')
+            
             plot_durations()
             break
 
