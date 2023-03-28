@@ -11,8 +11,8 @@ import socket
 import numpy as np
 import io
 
+# 에러나면 cv2없애고 다시 ㄱ;
 import cv2
-
 # import cv2 -> cv2를 같이 넣어주면 전송속도 시간감소에 도움될듯
 
 
@@ -69,6 +69,8 @@ class classificationApp(FloatLayout):
         # 버튼 추가 size=(200, 150) 로 되어있는데, 지금 버튼 크기 width 더 늘려야해서 400, 150 으로 해볼것. height는 딱맞음.
         # 이거 흠... 길면 짤리는데 어케하지 .......!
         btn_capture = Button(text='Classficiation', size_hint=(None, None), size=(300, 150), pos_hint={'center_x': 0.5, 'y': 0})
+        # 버튼도 나중에 이미지 넣기 가능 background_normal='path/to/your/image.png' 이런식으로!
+        
         # 이거 size 조절해야함.......!  
         btn_capture.texture_size = btn_capture.size
         btn_capture.padding = [20, 20]
@@ -121,8 +123,9 @@ class classificationApp(FloatLayout):
         pixels = pixels.reshape(texture.size[1], texture.size[0], -1)
         # (480, 640)
         rotated_pixels = np.rot90(pixels)
+
         # (640, 480)
-        
+
         # 여기서 나중에 넘겨줄때 이미지 사이즈를 작게해서 넘겨주면 더 빠르게 수행가능합니다. 지금 서버코드에서 cv2 를 이용해 resize를 진행하는데
         # 이렇게 할 필요 없습니다!!!!!!
 

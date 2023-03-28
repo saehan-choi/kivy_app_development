@@ -190,9 +190,19 @@ def optimize_model():
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
-    print(target_net(non_final_next_states).size())
+
+    # 여기서 하고자 하는것은 단순하다. next_state가 None이 아닌, 즉 next_state가 남아있는 상태를 target network로 집어넣어서
+    # 결과값을 얻은 다음 현재의 상태와 미래의 state action value를 최소화 하는 방향으로 학습한다. 
+    # 따라서 미래의 보상값이 최대한 좋은 방향으로 현재의 값을 return 하는것이다.
     with torch.no_grad():
         next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0]
+
+    # a = torch.tensor([0,0,0,0,0,        0,0,0,0,0], dtype=torch.float)
+    # b = torch.tensor([True,True,True,True,True,           False,True,True,True,True], dtype=torch.bool)
+    # a[b] = torch.tensor([5.6, 5.3, 5.2, 5.4, 5.1,  1.2, 1.5, 1.8, 1.9], dtype=torch.float)
+    # results -> tensor([5.6000, 5.3000, 5.2000, 5.4000, 5.1000, 0.0000, 1.2000, 1.5000, 1.8000, 1.9000])
+
+
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
 
