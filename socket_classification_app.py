@@ -11,6 +11,11 @@ import socket
 import numpy as np
 import io
 
+import cv2
+
+# import cv2 -> cv2를 같이 넣어주면 전송속도 시간감소에 도움될듯
+
+
 # IP, PORT = '27.112.246.62', 8000
 
 IP, PORT = '27.112.246.62', 8000
@@ -37,14 +42,19 @@ Builder.load_string('''
         opacity: 1
     Label:
         id: response_label
-        size_hint: None, None
-        # size:w, h 입니다.
-        size: 300, 180
-        height: 120
-        valign: 'bottom'
+        size_hint: 0.5, 0.4
+        valign: 'top'
         halign: 'left'
+        text_size: self.width, None
         pos_hint: {'x': 0, 'y': 0}
         font_size: '10sp'
+
+        # sizehint는 상대크기 size는 절대크기입니다. height도 절대크기이므로 사용하지 않는게 좋다.
+        # size:w, h 입니다.
+        # size: 300, 180
+        # height: 120
+        # valign은 수직정렬 halign은 수평정렬
+        # kivy앱에서 상대적인 위치를 지정 x:0 y:0 은 왼쪽하단 x:1 y:1은 우측상단        
 ''')
 
 # 왜 실시간으로 되다가 버튼한번누르면 (뚞뚞끊낌) 안되는거지?
@@ -112,6 +122,9 @@ class classificationApp(FloatLayout):
         # (480, 640)
         rotated_pixels = np.rot90(pixels)
         # (640, 480)
+        
+        # 여기서 나중에 넘겨줄때 이미지 사이즈를 작게해서 넘겨주면 더 빠르게 수행가능합니다. 지금 서버코드에서 cv2 를 이용해 resize를 진행하는데
+        # 이렇게 할 필요 없습니다!!!!!!
 
         # bytes만 반환
         return rotated_pixels

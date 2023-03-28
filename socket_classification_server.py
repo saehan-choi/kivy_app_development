@@ -41,11 +41,11 @@ def bytes_to_image(bytes):
     pixels = np.frombuffer(bytes, dtype=np.uint8)
     # print(pixels.shape)
     pixels = pixels.reshape(resolution[0], resolution[1], -1)
-    
+
     img = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
     img = cv2.rotate(img, cv2.ROTATE_180)
     img = cv2.flip(img, 1)
-    
+
     cv2.imwrite('kaka.jpg', img)
 
     return img

@@ -11,6 +11,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+
+
+
+# 환경 생성
 env = gym.make("CartPole-v1")
 
 # set up matplotlib
@@ -18,7 +22,7 @@ is_ipython = 'inline' in matplotlib.get_backend()
 if is_ipython:
     from IPython import display
 
-# plt를 지속적으로 업데이트핤 수 있는 함수임.
+# plt를 지속적으로 업데이트할 수 있는 함수임.
 plt.ion()
 
 # if gpu is to be used
@@ -43,8 +47,6 @@ class ReplayMemory(object):
 
     def __len__(self):
         return len(self.memory)
-    
-    
 
 
 class DQN(nn.Module):
@@ -61,8 +63,7 @@ class DQN(nn.Module):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)
-    
-    
+
 # BATCH_SIZE is the number of transitions sampled from the replay buffer
 # GAMMA is the discount factor as mentioned in the previous section
 # EPS_START is the starting value of epsilon
@@ -82,8 +83,11 @@ LR = 1e-4
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
-n_observations = len(state)
+# print(state)
+# [cart position, cart velocity, pole angle, pole angular velocity]
+# [-0.04702549 -0.00169586  0.02877673 -0.00429488]
 
+n_observations = len(state)
 
 policy_net = DQN(n_observations, n_actions).to(device)
 target_net = DQN(n_observations, n_actions).to(device)
@@ -119,11 +123,11 @@ def select_action(state):
     #         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], device='cuda:0')
 
     else:
+        # eps_threshold는 지속적으로 steps_done이 늘어날수록 줄어든다. 따라서 처음은 randomly 하게 행동하다가
+        # 시간이 지날수록 greedy하게 행동한다.
         return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
 
-
 episode_durations = []
-
 
 def plot_durations(show_result=False):
     plt.figure(1)
@@ -149,7 +153,6 @@ def plot_durations(show_result=False):
             display.clear_output(wait=True)
         else:
             display.display(plt.gcf())
-            
 
 def optimize_model():
     if len(memory) < BATCH_SIZE:
@@ -159,7 +162,7 @@ def optimize_model():
     # detailed explanation). This converts batch-array of Transitions
     # to Transition of batch-arrays.
     batch = Transition(*zip(*transitions))
-
+    
     # Compute a mask of non-final states and concatenate the batch elements
     # (a final state would've been the one after which simulation ended)
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
@@ -169,12 +172,13 @@ def optimize_model():
     state_batch = torch.cat(batch.state)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
+    
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
     state_action_values = policy_net(state_batch).gather(1, action_batch)
-
+    
     # Compute V(s_{t+1}) for all next states.
     # Expected values of actions for non_final_next_states are computed based
     # on the "older" target_net; selecting their best reward with max(1)[0].
@@ -206,17 +210,27 @@ else:
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
     state, info = env.reset()
+    # print(state)
+    # [cart position, cart velocity, pole angle, pole angular velocity]
+    # [-0.04702549 -0.00169586  0.02877673 -0.00429488]
+
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+
     for t in count():
         action = select_action(state)
         observation, reward, terminated, truncated, _ = env.step(action.item())
+        # observation - action후 상태
+        # reward - action후 보상
+        # terminated - 에피소드 종료여부
+        # truncated - 최대시간 단계에 도달해서 강제로 종료여부
+
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
         if terminated:
             next_state = None
         else:
-            # print(observation) -> 현재 state
+            # print(observation) -> 현재 state  -> [cart position, cart velocity, pole angle, pole angular velocity]
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
         # Store the transition in memory
