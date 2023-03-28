@@ -11,13 +11,20 @@ import torch.nn.functional as F
 
 import timm
 
+import threading
+
+
+# bad reaction good reaction 넣어도 괜찮을듯 하네요
+
+
 HOST = ''
 PORT = 8000
 
 resolution = (640, 480, 4)
 
-# 전송하는데 0.02s ㅋㅋㅋㅋㅋㅋ
-# 미쳤군.
+# 나중에 cv2로 바꾸면 256*256*3 이렇게 변할수도 있겠군
+
+# 전송하는데 0.02s
 # 아, 근데 이미지 사이즈를 256,256으로 돌려도 문제없을텐데, timm이 어느 이미지사이즈에서 학습했는지 알아야한다.
 
 
@@ -28,7 +35,6 @@ def recvall(sock):
     while True:
         part = sock.recv(BUFF_SIZE)
         data += part
-        
         # len(part) < BUFF_SIZE 이건왜하는거지
         # len(data)==640*680*4:랑 같음
         if len(data)== resolution[0] * resolution[1] * resolution[2]:
@@ -36,6 +42,7 @@ def recvall(sock):
             break
 
     return data
+
 
 def bytes_to_image(bytes):
     pixels = np.frombuffer(bytes, dtype=np.uint8)
@@ -45,6 +52,10 @@ def bytes_to_image(bytes):
     img = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
     img = cv2.rotate(img, cv2.ROTATE_180)
     img = cv2.flip(img, 1)
+
+
+    # img = np.rot90(img) -> 이건 나중에 앱에서 사용허가 후 진행
+    # img = cv2.resize(img, (256, 256))
 
     cv2.imwrite('kaka.jpg', img)
 
@@ -92,13 +103,43 @@ def tensor_to_results(model, img, classes):
             for j in range(max_indices.shape[1]):
                 prob = softmax_results[i][j]*100
                 print(f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%")
-                classification_results+=f"{classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
+                
+                if i == max_indices.shape[0] - 1 and j == max_indices.shape[1] - 1:
+                    classification_results += f"   {classes[int(max_indices[i][j])]}: {prob:.1f}%"
+                else:
+                    classification_results+=f"   {classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
 
-            print('\n\n')
 
         # socket으로 전송하기 위해서는 bytes로 결과를 보내야하기 때문에 이렇게 전송
         serialized_results = classification_results.encode('utf-8')
         return serialized_results
+
+def handle_client(client_socket):
+    st = time.time()
+    bytes = recvall(client_socket)
+    img = bytes_to_image(bytes)
+    tensor = img_to_tensor(img)
+    results = tensor_to_results(model, tensor, classes)
+
+    client_socket.sendall(results)
+
+    ed = time.time()
+    print(f'{ed-st}s passed')
+    print('\n\n')
+
+    client_socket.close()
+
+def start_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((HOST, PORT))
+        server_socket.listen()
+
+        while True:
+            client_socket, addr = server_socket.accept()
+            client_thread = threading.Thread(target=handle_client, args=(client_socket,))
+            client_thread.start()
+            # print(f"Connection from {addr} has been established.")
 
 if __name__ == "__main__":
     classes = imagenet_classes_arr()
@@ -106,20 +147,41 @@ if __name__ == "__main__":
     model = timm.create_model('efficientnet_b0', pretrained=True)
     model.to(device)
 
-    while True:
+    start_server()
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.bind((HOST, PORT))
-            server_socket.listen()
-            client_socket, addr = server_socket.accept()
-            bytes = recvall(client_socket)
-            img = bytes_to_image(bytes)
-            tensor = img_to_tensor(img)
-            results = tensor_to_results(model, tensor, classes)
+# 나중에 배치로 처리하고 일정시간이상 안들어오면 
+
+
+# if __name__ == "__main__":
+#     classes = imagenet_classes_arr()
+#     device = torch.device("cuda:2")
+#     model = timm.create_model('efficientnet_b0', pretrained=True)
+#     model.to(device)
+#     # 집 네트워크 200mb 환경에서 0.12s 나옵니다. 네트워크 더 좋은환경에서 더 빨리됨.
+#     # 근데 회사 wifi 5g로 하면 0.2~0.3s 나옵니다.  일반wifi로 하면 0.5~0.6s 소요됩니다.
+#     # 로컬로 보내면 0.02s 나옵니다..!
+#     # 3g로 보내면 9s 나옴.
+    
+#     while True:
+
+#         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+#             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#             server_socket.bind((HOST, PORT))
+#             server_socket.listen()
+    
+#             client_socket, addr = server_socket.accept()
+#             st = time.time()
             
-            client_socket.sendall(results)
+#             bytes = recvall(client_socket)
+#             img = bytes_to_image(bytes)
+#             tensor = img_to_tensor(img)
+#             results = tensor_to_results(model, tensor, classes)
+            
+#             client_socket.sendall(results)
 
-        client_socket.close()
-        server_socket.close()
+#             ed = time.time()
+#             print(f'{ed-st}s passed')
+            
+#         client_socket.close()
+#         server_socket.close()
 

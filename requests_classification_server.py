@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
 def post():
-    
+
     file = request.files['camera.pixels']
     byte_data = file.read()
     # 여기서 0.1s 소요됨.. 이걸 해결해야한다. -> 직접 byte파일을 보내고, 읽어올수있는 방법없는지 찾기

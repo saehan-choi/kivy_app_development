@@ -162,29 +162,35 @@ def optimize_model():
     # detailed explanation). This converts batch-array of Transitions
     # to Transition of batch-arrays.
     batch = Transition(*zip(*transitions))
-    
+
     # Compute a mask of non-final states and concatenate the batch elements
     # (a final state would've been the one after which simulation ended)
+    # s is not None -> 두 변수 옆에 이것을 선언해줌으로서 non final일때만 그 상태값들을 가져옴!
+
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                          batch.next_state)), device=device, dtype=torch.bool)
+                                          batch.next_state)), device=device, dtype=torch.bool)    
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
+    # print(non_final_mask) -> tensor([ True,  True,  True,  True,  True,  True,  True,  True -> boolean의 batchsize로 묶은것들을 나타냄
+    # print(non_final_next_states) -> tensor([[-3.8601e-02, -4.3774e-01,  2.3463e-02,  5.7385e-01], [ 4.0245e-02,  5.5229e-01,  1.3867e-02, -8.0089e-01] state를 batchsize로 묶은 tensor를 나타냄
+    # non_final_mask는 batch사이즈의 숫자대로 나오고 non_final_next_states는 next_state가 없으면 저장을 안함!
+
     state_batch = torch.cat(batch.state)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
-    
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
     state_action_values = policy_net(state_batch).gather(1, action_batch)
-    
+
     # Compute V(s_{t+1}) for all next states.
     # Expected values of actions for non_final_next_states are computed based
     # on the "older" target_net; selecting their best reward with max(1)[0].
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
+    print(target_net(non_final_next_states).size())
     with torch.no_grad():
         next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0]
     # Compute the expected Q values
@@ -246,6 +252,7 @@ for i_episode in range(num_episodes):
         # θ′ ← τ θ + (1 −τ )θ′
         target_net_state_dict = target_net.state_dict()
         policy_net_state_dict = policy_net.state_dict()
+
         for key in policy_net_state_dict:
             target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
         target_net.load_state_dict(target_net_state_dict)
