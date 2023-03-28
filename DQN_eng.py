@@ -231,7 +231,7 @@ for i_episode in range(num_episodes):
     # [-0.04702549 -0.00169586  0.02877673 -0.00429488]
 
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-
+    # print(state) -> tensor([[-0.0311, -0.0486, -0.0449, -0.0446]], device='cuda:0')  이거 하나나옴
     for t in count():
         action = select_action(state)
         observation, reward, terminated, truncated, _ = env.step(action.item())
@@ -239,14 +239,15 @@ for i_episode in range(num_episodes):
         # reward - action후 보상
         # terminated - 에피소드 종료여부
         # truncated - 최대시간 단계에 도달해서 강제로 종료여부
-
+        if reward != 1.0:
+            print('what?')
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
         if terminated:
             next_state = None
         else:
-            # print(observation) -> 현재 state  -> [cart position, cart velocity, pole angle, pole angular velocity]
+            # print(observation) -> action후 현재 state  -> [cart position, cart velocity, pole angle, pole angular velocity]
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
         # Store the transition in memory
