@@ -40,9 +40,20 @@ policy_net.load_state_dict(torch.load('./cartpole_weights/episode_durations_500.
 
 
 inp = torch.randn(4).unsqueeze(0).to(device)
-print(policy_net(inp))
+# print(torch.argmax(policy_net(inp)).item())
 # 이제 됩니다 이걸로 어떻게 구현하면 될듯요
+action = torch.argmax(policy_net(inp)).item()
 
+
+while True:
+    
+    observation, reward, terminated, truncated, _ = env.step(action)
+    
+    
+    next_state = torch.tensor(observation).to(device)
+    
+    action = policy_net(next_state)
+    print(action)
 
 
 # while True:

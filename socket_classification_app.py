@@ -1,155 +1,184 @@
-from kivy.app import App
-from kivy.lang import Builder
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.camera import Camera
-from kivy.uix.image import Image
-from kivy.graphics.texture import Texture
-from kivy.uix.button import Button
-from kivy.clock import Clock
 
 import socket
 import numpy as np
-import io
-
-# 에러나면 cv2없애고 다시 ㄱ;
 import cv2
-# import cv2 -> cv2를 같이 넣어주면 전송속도 시간감소에 도움될듯
+import time
+
+import torchvision.transforms as transforms
+import torch
+
+import torch.nn.functional as F
+
+import timm
+
+import threading
 
 
-# IP, PORT = '27.112.246.62', 8000
+HOST = ''
+PORT = 8000
 
-IP, PORT = '27.112.246.62', 8000
+resolution = (640, 480, 4)
 
-# resolution: (640, 480) -> 디텍션 가능함.
-# resolution: (320, 240) -> 디텍션 가능함.
+# 나중에 cv2로 바꾸면 256*256*3 이렇게 변할수도 있겠군
 
-# 1280x720
-# 1920x1080
-# -> 이부분은 테스트 아직 안해보았음
-
-Builder.load_string('''
-<classificationApp>:
-    Camera:
-        id: camera
-        resolution: (640, 480)
-        play: True
-        opacity: 0
-    Image:
-        id: image
-        allow_stretch: True
-        keep_ratio: True
-        # 투명도 조절
-        opacity: 1
-    Label:
-        id: response_label
-        size_hint: 0.5, 0.4
-        valign: 'top'
-        halign: 'left'
-        text_size: self.width, None
-        pos_hint: {'x': 0, 'y': 0}
-        font_size: '10sp'
-
-        # sizehint는 상대크기 size는 절대크기입니다. height도 절대크기이므로 사용하지 않는게 좋다.
-        # size:w, h 입니다.
-        # size: 300, 180
-        # height: 120
-        # valign은 수직정렬 halign은 수평정렬
-        # kivy앱에서 상대적인 위치를 지정 x:0 y:0 은 왼쪽하단 x:1 y:1은 우측상단        
-''')
-
-# 왜 실시간으로 되다가 버튼한번누르면 (뚞뚞끊낌) 안되는거지?
-
-class classificationApp(FloatLayout):
-    def __init__(self, **kwargs):
-        super(classificationApp, self).__init__(**kwargs)
-
-        Clock.schedule_interval(self.update, 1.0 / 30.0)
-        # 나중에 1.0/30.0으로 바꾸고 해상도도변경해야함.
-
-        # 버튼 추가 size=(200, 150) 로 되어있는데, 지금 버튼 크기 width 더 늘려야해서 400, 150 으로 해볼것. height는 딱맞음.
-        # 이거 흠... 길면 짤리는데 어케하지 .......!
-        btn_capture = Button(text='Classficiation', size_hint=(None, None), size=(300, 150), pos_hint={'center_x': 0.5, 'y': 0})
-        # 버튼도 나중에 이미지 넣기 가능 background_normal='path/to/your/image.png' 이런식으로!
-        
-        # 이거 size 조절해야함.......!  
-        btn_capture.texture_size = btn_capture.size
-        btn_capture.padding = [20, 20]
-
-        btn_capture.bind(on_press=self.capture)
-        self.add_widget(btn_capture)
-        self.capture_timeout = 5
-
-    def capture(self, instance):
-        # 현재 화면에 보이는 프레임을 캡처하고 처리하는 함수 호출
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((IP, PORT))
-
-        # 이것도 일단됨
-        # self.sock.sendall(self.rotated_numpy.tobytes())
-        self.sock.sendall(self.rotated_bytes)
-        
-        texts = self.sock.recv(1024).decode('utf-8')
-        
-        self.ids['response_label'].text = texts
-
-        Clock.unschedule(self.update)
-        # dt가 있는 이유는 schedule_once에서 dt인자를 받아야하기 때문입니다.
-        Clock.schedule_once(lambda dt: Clock.schedule_interval(self.update, 1.0 / 30.0), self.capture_timeout)
-        # Clock.schedule_once(self.clear_label_text, self.capture_timeout)
-
-    def update(self, dt):
-        texture = self.ids['camera'].texture
-
-        # rotate를 위해 numpy로 변환 및 회전후 bytes로 변경
-        self.rotated_numpy = self.bytes_to_numpy(texture)
-        self.rotated_bytes = self.numpy_to_bytes(self.rotated_numpy)
-
-        self.new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
-        self.new_texture.blit_buffer(self.rotated_bytes, bufferfmt='ubyte', colorfmt=texture.colorfmt)
-
-        self.ids['image'].texture = self.new_texture
-        self.ids['response_label'].text = ''
-
-    def numpy_to_bytes(self, array):
-        bytes_array = bytearray(array)
-        bytes = io.BytesIO(bytes_array)
-
-        return bytes.getvalue()
-
-    # for rotation
-    def bytes_to_numpy(self, texture):
-        pixels = np.frombuffer(texture.pixels, dtype=np.uint8)
-        # print(pixels.shape)
-        pixels = pixels.reshape(texture.size[1], texture.size[0], -1)
-        # (480, 640)
-        rotated_pixels = np.rot90(pixels)
-
-        # (640, 480)
-
-        # 여기서 나중에 넘겨줄때 이미지 사이즈를 작게해서 넘겨주면 더 빠르게 수행가능합니다. 지금 서버코드에서 cv2 를 이용해 resize를 진행하는데
-        # 이렇게 할 필요 없습니다!!!!!!
-
-        # bytes만 반환
-        return rotated_pixels
+# 전송하는데 0.02s
+# 아, 근데 이미지 사이즈를 256,256으로 돌려도 문제없을텐데, timm이 어느 이미지사이즈에서 학습했는지 알아야한다.
 
 
-class TestCamera(App):
-    def build(self):
-        try:
-            # permission을 해줘야하네 ㄷㄷ; 무조건 있어야합니다..!
-            from android.permissions import request_permissions, Permission
-            request_permissions([
-                Permission.CAMERA,
-                Permission.INTERNET,
-                Permission.WRITE_EXTERNAL_STORAGE,
-                Permission.READ_EXTERNAL_STORAGE
-            ])
-            
-        except:
-            pass
-            
+def recvall(sock):
+
+    BUFF_SIZE = 4096 # 4 KiB
+    data = b''
+    while True:
+        part = sock.recv(BUFF_SIZE)
+        data += part
+        # len(part) < BUFF_SIZE 이건왜하는거지
+        # len(data)==640*680*4:랑 같음
+        if len(data)== resolution[0] * resolution[1] * resolution[2]:
+            # either 0 or end of data
+            break
+
+    return data
+
+
+def bytes_to_image(bytes):
+    pixels = np.frombuffer(bytes, dtype=np.uint8)
+    # print(pixels.shape)
+    pixels = pixels.reshape(resolution[0], resolution[1], -1)
+
+    img = cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
+    img = cv2.rotate(img, cv2.ROTATE_180)
+    img = cv2.flip(img, 1)
+
+
+    # img = np.rot90(img) -> 이건 나중에 앱에서 사용허가 후 진행
+    # img = cv2.resize(img, (256, 256))
+
+    cv2.imwrite('kaka.jpg', img)
+
+    return img
+
+def imagenet_classes_arr():
+    with open('imagenet_classes.txt', 'r') as f:
+        lines = f.readlines()
+
+    class_names = []
+    for line in lines:
+        line = line.split(',')
+        line = line[0].strip()  # 줄바꿈 문자 제거
+        class_names.append(line)
+
+    return class_names
+
+def img_to_tensor(img):
+
+    img = cv2.resize(img, (256,256))
+    # h, w, c -> c, h, w 로 변경! imagenet에서 학습될 때 이런 색상으로 학습된다네용
+    img = img.transpose(2, 0, 1)
+    # ed1 = time.time()
+
+    # cv2 to normalized tensor
+    tensor_img = torch.from_numpy(img / 255.0).float()
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    normalized_img = normalize(tensor_img).unsqueeze(0)
+    normalized_img = normalized_img.to(device)
+    # ed2 = time.time()
+
+    return normalized_img
+
+def tensor_to_results(model, img, classes):
+    # inference
+    classification_results = ""
+    model.eval()
+    with torch.no_grad():
+        results = model(img)
+        max_values, max_indices = torch.topk(results, k=5, dim=1)
+        softmax_results = F.softmax(max_values, dim=1)
+
+        # max_indices -> tensor([[508, 878, 398, 810, 681]])
+        for i in range(max_indices.shape[0]):
+            for j in range(max_indices.shape[1]):
+                prob = softmax_results[i][j]*100
+                print(f"{j+1}. {classes[int(max_indices[i][j])]}: {prob:.1f}%")
                 
-        return classificationApp()
+                if i == max_indices.shape[0] - 1 and j == max_indices.shape[1] - 1:
+                    classification_results += f"   {classes[int(max_indices[i][j])]}: {prob:.1f}%"
+                else:
+                    classification_results+=f"   {classes[int(max_indices[i][j])]}: {prob:.1f}%\n"
 
-TestCamera().run()
+
+        # socket으로 전송하기 위해서는 bytes로 결과를 보내야하기 때문에 이렇게 전송
+        serialized_results = classification_results.encode('utf-8')
+        return serialized_results
+
+def handle_client(client_socket):
+    st = time.time()
+    bytes = recvall(client_socket)
+    img = bytes_to_image(bytes)
+    tensor = img_to_tensor(img)
+    results = tensor_to_results(model, tensor, classes)
+
+    client_socket.sendall(results)
+
+    ed = time.time()
+    print(f'{ed-st}s passed')
+    print('\n\n')
+
+    client_socket.close()
+
+def start_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((HOST, PORT))
+        server_socket.listen()
+
+        while True:
+            client_socket, addr = server_socket.accept()
+            client_thread = threading.Thread(target=handle_client, args=(client_socket,))
+            client_thread.start()
+            # print(f"Connection from {addr} has been established.")
+
+if __name__ == "__main__":
+    classes = imagenet_classes_arr()
+    device = torch.device("cuda:2")
+    model = timm.create_model('efficientnet_b0', pretrained=True)
+    model.to(device)
+
+    start_server()
+
+# 나중에 배치로 처리하고 일정시간이상 안들어오면 
+
+
+# if __name__ == "__main__":
+#     classes = imagenet_classes_arr()
+#     device = torch.device("cuda:2")
+#     model = timm.create_model('efficientnet_b0', pretrained=True)
+#     model.to(device)
+#     # 집 네트워크 200mb 환경에서 0.12s 나옵니다. 네트워크 더 좋은환경에서 더 빨리됨.
+#     # 근데 회사 wifi 5g로 하면 0.2~0.3s 나옵니다.  일반wifi로 하면 0.5~0.6s 소요됩니다.
+#     # 로컬로 보내면 0.02s 나옵니다..!
+#     # 3g로 보내면 9s 나옴.
+    
+#     while True:
+
+#         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+#             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#             server_socket.bind((HOST, PORT))
+#             server_socket.listen()
+    
+#             client_socket, addr = server_socket.accept()
+#             st = time.time()
+            
+#             bytes = recvall(client_socket)
+#             img = bytes_to_image(bytes)
+#             tensor = img_to_tensor(img)
+#             results = tensor_to_results(model, tensor, classes)
+            
+#             client_socket.sendall(results)
+
+#             ed = time.time()
+#             print(f'{ed-st}s passed')
+            
+#         client_socket.close()
+#         server_socket.close()
 
