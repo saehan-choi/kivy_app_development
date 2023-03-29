@@ -30,6 +30,7 @@ env = gym.make("CartPole-v1", render_mode='human')
 env.reset()
 
 n_actions = env.action_space.n
+
 state, info = env.reset()
 # print(state)
 # [cart position, cart velocity, pole angle, pole angular velocity]
