@@ -1,3 +1,4 @@
+import random
 
 import torch
 import torch.nn as nn
@@ -39,25 +40,42 @@ policy_net = DQN(n_observations, n_actions).to(device)
 policy_net.load_state_dict(torch.load('./cartpole_weights/episode_durations_500.pt'))
 
 
+
 inp = torch.randn(4).unsqueeze(0).to(device)
 # print(torch.argmax(policy_net(inp)).item())
 # 이제 됩니다 이걸로 어떻게 구현하면 될듯요
 action = torch.argmax(policy_net(inp)).item()
 
+policy_net.eval()
+with torch.no_grad():
+    
+    while True:
+        observation, reward, terminated, truncated, _ = env.step(action)
 
-while True:
-    
-    observation, reward, terminated, truncated, _ = env.step(action)
-    
-    
-    next_state = torch.tensor(observation).to(device)
-    
-    action = policy_net(next_state)
-    print(action)
+        if terminated or truncated:
+            env.reset()
+            continue
+        
+        next_state = torch.tensor(observation).to(device)
+        
+        if random.random()<0.3:
+            action = random.randint(0,1)
+        else:
+            action = torch.argmax(policy_net(next_state)).item()
+            print(policy_net(next_state))
+
+        # if truncated:
+        #     env.reset()
+        #     continue
+
+        
+        # print(torch.argmax(action))
+        # print(torch.argmax(action).item())
 
 
-# while True:
-#     action = int(input("Action: "))
-#     if action in (0, 1):
-#         env.step(action)
-#         env.render()
+
+    # while True:
+    #     action = int(input("Action: "))
+    #     if action in (0, 1):
+    #         env.step(action)
+    #         env.render()
