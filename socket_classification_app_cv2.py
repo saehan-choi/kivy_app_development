@@ -105,26 +105,29 @@ class classificationApp(FloatLayout):
 
         self.new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
         self.new_texture.blit_buffer(self.rotated_bytes, bufferfmt='ubyte', colorfmt=texture.colorfmt)
-        
+
         # self.new_texture.flip_vertical() -> 이렇게 하면 상하반전입니다 ㅎㅎ
         # self.new_texture.flip_horizontal() -> 이렇게 하면 좌우반전
-        
+
         self.ids['image'].texture = self.new_texture
         self.ids['response_label'].text = ''
 
-    def numpy_to_bytes(self, array):
+    def img_to_bytes(self, array):
         bytes_array = bytearray(array)
         bytes = io.BytesIO(bytes_array)
-
         return bytes.getvalue()
 
     # for rotation
-    def bytes_to_numpy(self, texture):
+    def bytes_to_img(self, texture):
         pixels = np.frombuffer(texture.pixels, dtype=np.uint8)
         # print(pixels.shape)
         pixels = pixels.reshape(texture.size[1], texture.size[0], -1)
         # (480, 640)
         rotated_pixels = np.rot90(pixels)
+
+        img = cv2.cvtColor(rotated_pixels, cv2.COLOR_RGBA2BGR)
+        img = cv2.resize(img, (256,256))
+        # print(img)
 
         # (640, 480)
         # 여기서 나중에 넘겨줄때 이미지 사이즈를 작게해서 넘겨주면 더 빠르게 수행가능합니다. 지금 서버코드에서 cv2 를 이용해 resize를 진행하는데

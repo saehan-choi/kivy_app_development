@@ -47,7 +47,6 @@ score.hideturtle()
 score.goto(0, 170)
 score.write("Player 1: {}  Player 2: {}".format(left_score, right_score), align="center", font=("Courier", 16, "normal"))
 
-
 # 좌측 패들을 위로 이동
 def left_pad_up():
     y = left_pad.ycor()

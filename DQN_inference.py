@@ -45,16 +45,15 @@ action = torch.argmax(policy_net(inp)).item()
 
 policy_net.eval()
 with torch.no_grad():
-    
     while True:
         observation, reward, terminated, truncated, _ = env.step(action)
 
         if terminated or truncated:
             env.reset()
             continue
-        
+
         next_state = torch.tensor(observation).to(device)
-        
+
         # 노이즈 조절은 여기서! 
         if random.random()<0.3:
             action = random.randint(0,1)
