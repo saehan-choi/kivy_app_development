@@ -111,13 +111,15 @@ def select_action(state):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            # action index가 나옴
+            
+            # action index가 나옴 -> 1차원을 unsqueeze(0) 하는것과 같다고 보면됩니다.
+            # return값 -> tensor([[1]], device='cuda:0') 이렇게 나옵니다.
             return policy_net(state).max(1)[1].view(1, 1)
 
     # target_net(non_final_next_states).max(1)[0] -> action value
     # values=tensor([-0.0114, -0.0129, -0.0129, -0.0136, -0.0136, -0.0133, -0.0105, -0.0117,
     #         -0.0134, -0.0115, -0.0131, -0.0140, -0.0125, -0.0129, -0.0134, -0.0115], device='cuda:0', grad_fn=<MaxBackward0>)
-    
+
     # target_net(non_final_next_states).max(1)[1] -> action index
     #        device='cuda:0', grad_fn=<MaxBackward0>),
     # indices=tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -202,7 +204,6 @@ def optimize_model():
     # b = torch.tensor([True,True,True,True,True,           False,True,True,True,True], dtype=torch.bool)
     # a[b] = torch.tensor([5.6, 5.3, 5.2, 5.4, 5.1,  1.2, 1.5, 1.8, 1.9], dtype=torch.float)
     # results -> tensor([5.6000, 5.3000, 5.2000, 5.4000, 5.1000, 0.0000, 1.2000, 1.5000, 1.8000, 1.9000])
-
 
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * GAMMA) + reward_batch
