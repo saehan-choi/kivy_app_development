@@ -9,6 +9,8 @@ class PongEnv:
         self.win.bgcolor("black")
         self.win.setup(width=600, height=400)
         self.win.tracer(0)
+        # tracer() 메소드의 인수로 0을 전달하면, turtle 그래픽의 업데이트를 비활성화하고, 인수로 1을 전달하면 업데이트를 활성화합니다.
+
 
         # 좌측 패들
         self.left_pad = turtle.Turtle()
@@ -16,8 +18,12 @@ class PongEnv:
         self.left_pad.shape("square")
         self.left_pad.color("white")
         self.left_pad.shapesize(stretch_wid=5, stretch_len=1)
+        # -> 패들크기지정
         self.left_pad.penup()
+        # -> 펜을 들어서 이동할 때 그리지 않도록지정
         self.left_pad.goto(-250, 0)
+        # x, y 인데 0이 중앙임
+        # 0,0 이 화면의 중앙에 위치함.
 
         # 우측 패들
         self.right_pad = turtle.Turtle()
@@ -30,13 +36,15 @@ class PongEnv:
 
         # 공
         self.ball = turtle.Turtle()
-        self.ball.speed(40)
+        self.ball.speed(50)
         self.ball.shape("circle")
         self.ball.color("white")
         self.ball.penup()
         self.ball.goto(0, 0)
         self.ball.dx = 0.1
         self.ball.dy = -0.1
+        # 공의 x방향 이동속도 y방향 이동속도 dx, dy
+
 
         # 점수판
         self.left_score = 0
@@ -46,6 +54,7 @@ class PongEnv:
         self.score.color("white")
         self.score.penup()
         self.score.hideturtle()
+        # 그냥 객체를 하나 안나타나게 하는거네
         self.score.goto(0, 170)
         self.score.write("Player 1: {}  Player 2: {}".format(self.left_score, self.right_score), align="center", font=("Courier", 16, "normal"))
 
@@ -82,7 +91,6 @@ class PongEnv:
 
     # 화면 업데이트
     def update(self):
-        
         self.win.update()
 
     # 게임 종료
@@ -96,9 +104,10 @@ class PongEnv:
         right_pad_y = self.right_pad.ycor()
         ball_x = self.ball.xcor()
         ball_y = self.ball.ycor()
+        # xcor, ycor -> x, y의 현재좌표
         ball_dx = self.ball.dx
         ball_dy = self.ball.dy
-        
+
         state = [left_pad_y, right_pad_y, ball_x, ball_y, ball_dx, ball_dy]
         return state
 
@@ -112,7 +121,7 @@ class PongEnv:
             self.right_pad_up()
         elif action == 3:
             self.right_pad_down()
-        
+
         self.ball.setx(self.ball.xcor() + self.ball.dx)
         self.ball.sety(self.ball.ycor() + self.ball.dy)
 
@@ -125,7 +134,7 @@ class PongEnv:
         if self.ball.ycor() < -190:
             self.ball.sety(-190)
             self.ball.dy *= -1
-            
+
         # 공이 우측 벽과 충돌했을 때 (좌측 선수 승리)
         if self.ball.xcor() > 290:
             self.ball.goto(0, 0)
@@ -170,12 +179,29 @@ class PongEnv:
 
         return state, reward, done, {}
 
+    def reset(self):
+        self.left_pad.goto(-250, 0)
+        self.right_pad.goto(250, 0)
+        self.ball.goto(0, 0)
+        self.ball.dx = 0.1
+        self.ball.dy = -0.1
+        self.left_score = 0
+        self.right_score = 0
+        self.score.clear()
+        self.score.write("Player 1: {}  Player 2: {}".format(self.left_score, self.right_score), align="center", font=("Courier", 16, "normal"))
 
 game = PongEnv()
 
+cnt = 0
 while True:
-    action = random.randint(0,3)
-    print(game.step(action))
-    game.update()
 
-    # time.sleep(0.01)
+    action = random.randint(0,3)
+
+ 
+    print(game.step(action))
+    # game.update()
+    if cnt % 5000 == 0:
+        game.reset()
+    
+    cnt+=1
+    print(cnt)
