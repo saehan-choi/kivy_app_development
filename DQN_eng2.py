@@ -11,9 +11,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-
-
-
 env = gym.make("CartPole-v1")
 
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -177,6 +174,8 @@ else:
 
 for i_episode in range(num_episodes):
     state, info = env.reset()
+    
+    print(info)
     # [cart position, cart velocity, pole angle, pole angular velocity]
     # [-0.04702549 -0.00169586  0.02877673 -0.00429488]
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)

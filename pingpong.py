@@ -15,9 +15,10 @@ class PongEnv:
         self.ball = self.create_ball()
         self.left_score, self.right_score = 0, 0
         self.score = self.create_scoreboard()
-
+        
         self.register_key_events()
-
+        
+        self.action_space = [0, 1, 2, 3]
 
     def create_pad(self, x):
         pad = turtle.Turtle()
@@ -172,18 +173,7 @@ class PongEnv:
         self.score.clear()
         self.score.write("Player 1: {}  Player 2: {}".format(self.left_score, self.right_score), align="center", font=("Courier", 16, "normal"))
 
-if __name__ == '__main__':
-    game = PongEnv()
-
-    cnt = 0
-    while True:
-        action = random.randint(0, 3)
-        print(game.step(action))
-
-        # if cnt % 5000 == 0:
-        #     game.reset()
-
-        cnt += 1
-        print(cnt)
-
-
+        state = self.get_state()
+        
+        
+        return state
