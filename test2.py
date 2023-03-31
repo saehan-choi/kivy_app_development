@@ -84,7 +84,6 @@ class classificationApp(FloatLayout):
         self.sock.sendall(self.cv2_bytes_img)
 
         texts = self.sock.recv(1024).decode('utf-8')
-        
         self.ids['response_label'].text = texts
 
         Clock.unschedule(self.update)
@@ -98,7 +97,7 @@ class classificationApp(FloatLayout):
         # rotate를 위해 numpy로 변환 및 회전후 bytes로 변경
         self.rotated_numpy, self.rotated_resized_img = self.bytes_to_numpy(texture)
         self.rotated_bytes, self.cv2_bytes_img = self.numpy_to_bytes(self.rotated_numpy), self.numpy_to_bytes(self.rotated_resized_img)        
-
+        
         self.new_texture = Texture.create(size=(texture.size[1], texture.size[0]), colorfmt=texture.colorfmt)
         self.new_texture.blit_buffer(self.rotated_bytes, bufferfmt='ubyte', colorfmt=texture.colorfmt)
         # self.new_texture.flip_vertical() -> 이렇게 하면 상하반전입니다 ㅎㅎ

@@ -31,4 +31,18 @@ import random
 
 sample = random.random()
 
-print(random.choice([1,2,3,4]))
+# print(random.choice([1,2,3,4]))
+
+
+    # >>> t = torch.tensor([[1, 2], [3, 4]])
+    # >>> torch.gather(t, 1, torch.tensor([[0, 0], [1, 0]]))
+    # tensor([[ 1,  1],
+    #         [ 4,  3]])
+
+
+t = torch.tensor([[1, 2], 
+                  [3, 4]])
+
+print(torch.gather(t, 1, torch.tensor([[0, 0], 
+                                       [1, 0]])))
+
