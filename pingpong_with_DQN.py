@@ -33,9 +33,9 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        self.layer1 = nn.Linear(n_observations, 64)
+        self.layer2 = nn.Linear(64, 64)
+        self.layer3 = nn.Linear(64, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
@@ -69,6 +69,7 @@ def optimize_model():
                                           batch.next_state)), device=device, dtype=torch.bool)    
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
+    
     # print(non_final_mask) -> tensor([ True,  True,  True,  True,  True,  True,  True,  True -> boolean의 batchsize로 묶은것들을 나타냄
     # print(non_final_next_states) -> tensor([[-3.8601e-02, -4.3774e-01,  2.3463e-02,  5.7385e-01], [ 4.0245e-02,  5.5229e-01,  1.3867e-02, -8.0089e-01] state를 batchsize로 묶은 tensor를 나타냄
     # non_final_mask는 batch사이즈의 숫자대로 나오고 non_final_next_states는 next_state가 없으면 저장을 안함!
@@ -120,13 +121,8 @@ if __name__ == '__main__':
     Transition = namedtuple('Transition',
                             ('state', 'action', 'next_state', 'reward'))
 
-
     # state = [left_pad_y, right_pad_y, ball_x, ball_y, ball_dx, ball_dy]
     state = env.reset()
-
-    # print(state)
-    # [cart position, cart velocity, pole angle, pole angular velocity]
-    # [-0.04702549 -0.00169586  0.02877673 -0.00429488]
     n_observations = len(state)
 
     policy_net = DQN(n_observations, n_actions).to(device)
@@ -136,4 +132,46 @@ if __name__ == '__main__':
     optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
     memory = ReplayMemory(10000)
 
+    for i_episode in range(num_episodes):
+        state = env.reset()
+        # state -> [left_pad_y, right_pad_y, ball_x, ball_y, ball_dx, ball_dy]
+        state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        print('오잉')
+        for t in count():
+            action = select_action(state)
+
+            # print(action)
+            observations, reward, done, _ = env.step(action.item())
+            reward = torch.tensor([reward], device=device
+                                  )
+
+            if done:
+                next_state = None
+            else:
+                # print(observation) -> action후 state  -> [cart position, cart velocity, pole angle, pole angular velocity]
+                next_state = torch.tensor(observations, dtype=torch.float32, device=device).unsqueeze(0)
+
+            memory.push(state, action, next_state, reward)
+            state = next_state
+            optimize_model()
+
+            target_net_state_dict = target_net.state_dict()
+            policy_net_state_dict = policy_net.state_dict()
+
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+            target_net.load_state_dict(target_net_state_dict)
+
+
+            if done:
+                break
+
+            # if done:
+            #     episode_durations.append(t + 1)
+                
+            #     if episode_durations[-1] > 400:
+            #         torch.save(policy_net_state_dict, f'./cartpole_weights/episode_durations_{episode_durations[-1]}.pt')
+                
+            #     plot_durations()
+            #     break
 

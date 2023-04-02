@@ -37,8 +37,8 @@ class PongEnv:
         ball.color("white")
         ball.penup()
         ball.goto(0, 0)
-        ball.dx = 0.1
-        ball.dy = -0.1
+        ball.dx = 0.9
+        ball.dy = -0.9
         return ball
 
     def create_scoreboard(self):
@@ -72,8 +72,15 @@ class PongEnv:
 
     def move_pad(self, pad, dy):
         y = pad.ycor()
-        y += dy
-        pad.sety(y)
+        new_y = y + dy
+
+        # Define the minimum and maximum y-coordinates for the paddles
+        min_y = -160
+        max_y = 160
+
+        # Check if the new y-coordinate is within the allowed range
+        if min_y <= new_y <= max_y:
+            pad.sety(new_y)
 
     def update(self):
         self.win.update()
@@ -95,13 +102,24 @@ class PongEnv:
     def step(self, action):
         self.perform_action(action)
         self.move_ball()
+
+        # 이걸 먼저해야 wall_collision에서 초기화가 안된다!
+        if self.ball.xcor() > 290 or self.ball.xcor() < -290:
+            # print('왜안돼')
+            done = True
+        else:
+            done = False
+
         self.check_wall_collision()
         self.check_pad_collision()
 
         state = self.get_state()
         reward = self.calculate_reward()
-        done = (reward != 0)
-
+        # done = (reward != 0)
+        # print(self.ball.xcor())
+        # 290이라고 생각
+        # print(self.ball.xcor())
+        
         return state, reward, done, {}
 
     def perform_action(self, action):
@@ -125,6 +143,8 @@ class PongEnv:
         if self.ball.ycor() < -190:
             self.ball.sety(-190)
             self.ball.dy *= -1
+
+        # print(self.ball.xcor())
 
         if self.ball.xcor() > 290:
             self.score_update(left_player_scored=True)
@@ -156,24 +176,40 @@ class PongEnv:
 
     def calculate_reward(self):
         reward = 0
-        if self.ball.xcor() > 240:
-            reward = 1
-        elif self.ball.xcor() < -240:
-            reward = -1
+
+        # 공이 왼쪽 플레이어의 필드로 이동할 경우
+        if self.ball.dx < 0:
+            reward += 0.1
+
+        # 공이 오른쪽 플레이어의 필드로 이동할 경우
+        if self.ball.dx > 0:
+            reward += 0.1
+
+        # 왼쪽 패들이 공을 받아냈을 경우
+        if self.ball.xcor() < -240 and self.ball.ycor() < self.left_pad.ycor() + 10 and self.ball.ycor() > self.left_pad.ycor() - 10:
+            reward += 1000
+
+        # 오른쪽 패들이 공을 받아냈을 경우
+        if self.ball.xcor() > 240 and self.ball.ycor() < self.right_pad.ycor() + 10 and self.ball.ycor() > self.right_pad.ycor() - 10:
+            reward += 1000
+        
+        if self.ball.xcor() < -290 or self.ball.xcor() > 290:
+            reward = -1000
+        
         return reward
 
     def reset(self):
         self.left_pad.goto(-250, 0)
         self.right_pad.goto(250, 0)
         self.ball.goto(0, 0)
-        self.ball.dx = 0.1
-        self.ball.dy = -0.1
+        self.ball.dx = 0.9
+        self.ball.dy = -0.9
         self.left_score = 0
         self.right_score = 0
         self.score.clear()
         self.score.write("Player 1: {}  Player 2: {}".format(self.left_score, self.right_score), align="center", font=("Courier", 16, "normal"))
 
         state = self.get_state()
-        
-        
+
         return state
+

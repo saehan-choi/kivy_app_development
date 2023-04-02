@@ -36,8 +36,8 @@ class PongEnv:
         ball.color("white")
         ball.penup()
         ball.goto(0, 0)
-        ball.dx = 0.1
-        ball.dy = -0.1
+        ball.dx = 0.8
+        ball.dy = -0.8
         return ball
 
     def create_scoreboard(self):
@@ -90,6 +90,7 @@ class PongEnv:
 
         state = [left_pad_y, right_pad_y, ball_x, ball_y, ball_dx, ball_dy]
         return state
+    # -> step이랑 겹치더라도, reset할때 정보를 받아오기위해 필요합니다.
 
     def step(self, action):
         self.perform_action(action)
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     while True:
         action = random.randint(0, 3)
         print(game.step(action))
-
+        print(game.get_state())
         # if cnt % 5000 == 0:
         #     game.reset()
 

@@ -163,7 +163,7 @@ def optimize_model():
 
     state_action_values = policy_net(state_batch).gather(1, action_batch)
     
-    print(policy_net(state_batch).gather(1, action_batch))
+    # print(policy_net(state_batch).gather(1, action_batch))
     
     # >>> t = torch.tensor([[1, 2], [3, 4]])
     # >>> torch.gather(t, 1, torch.tensor([[0, 0], [1, 0]]))
@@ -199,7 +199,7 @@ else:
 for i_episode in range(num_episodes):
     state, info = env.reset()
 
-    print(info)
+    # print(info)
     # [cart position, cart velocity, pole angle, pole angular velocity]
     # [-0.04702549 -0.00169586  0.02877673 -0.00429488]
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
