@@ -48,7 +48,7 @@ class CFG:
     device = 'cuda'
     model_name = 'efficientnet_b0'
     model_pretrained = True
-    model_num_class = 4
+    model_num_class = 6
 
     img_resize = (256, 256)
 
@@ -108,21 +108,14 @@ class ImageDataset(Dataset):
                 self.file_list.append(full_path1+'/'+path2)
                 self.labels.append(path)
 
-                #  real label name
-                # train 안에 폴더, val안에 폴더만 들고오면 되게만들어놨습니다.
-                #  self.labels.append(cnt)
-                # cnt+=1   cnt로 이용하여도 문제는 없음을 확인했습니다.
-
+        # print(self.file_list)
+        # print(self.labels)
+        
+        label_dict = {'갈치': 0, '고등어': 1, '광어': 2, '굴비': 3, '도미': 4, '멸치': 5}
+        
         for _ in range(len(self.labels)):
-            i = self.labels.popleft()
-            if i == 'mask':
-                self.labels_list.append(0)
-            elif i == 'nomask':
-                self.labels_list.append(1)
-            elif i == 'wrong':
-                self.labels_list.append(2)
-            elif i == 'blind':
-                self.labels_list.append(3)
+            label = self.labels.popleft()
+            self.labels_list.append(label_dict[label])
 
     def __len__(self):
         return len(self.file_list)
@@ -131,15 +124,16 @@ class ImageDataset(Dataset):
         img_path = self.file_list[index]
         label = self.labels_list[index]
 
-        image_ = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        # image_ = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        image_ = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
         transformed = CFG.transform(image=image_)
         image = transformed['image']
-    
+        
         # 디버깅용
         # image = image.permute(1,2,0).numpy()
         # cv2.imshow('kk', image)
         # cv2.waitKey(0)
-    
+
         return image, label
 
 def train_one_epoch(model, optimizer, dataloader, epoch, train_loss_arr, device):
@@ -152,10 +146,10 @@ def train_one_epoch(model, optimizer, dataloader, epoch, train_loss_arr, device)
     for step, data in bar:
         images = data[0].to(device, dtype=torch.float)
         labels = data[1].to(device, dtype=torch.long)
-
+        
         batch_size = images.size(0)
         outputs = model(images)
-
+        
         loss = nn.CrossEntropyLoss()(outputs, labels)
 
         loss.backward()
@@ -213,11 +207,13 @@ if __name__ == "__main__":
         val_one_epoch(model, optimizer, val_loader, epoch, val_loss_arr, CFG.device)
         # 가중치저장하는 제안된방식으로 바꿉니다.
         # torch.save(model.state_dict(), CFG.weight_save_path+f'07-01_size224_{CFG.model_name}_epoch_{epoch}.pt')
-        torch.save(model.state_dict(), CFG.weight_save_path+f'07-14_size256_{CFG.model_name}_epoch_{epoch}.pt')
+        torch.save(model.state_dict(), CFG.weight_save_path+f'{CFG.model_name}_epoch_{epoch}_valloss_{val_loss_arr[-1]}.pt')
 
-        print(train_loss_arr)
-        print(val_loss_arr)
+        # print(train_loss_arr)
+        # print(val_loss_arr)
 
     # 여기서 albumentations augmentation 기법 적용해보기.
     # -> 나중에 도움된다. -> 완료
  
+
+
